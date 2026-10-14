@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MongoDB Database Interface</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">🍃</div>
+        <div>
+          <h1>MongoDB Manager</h1>
+          <p class="subtitle">Basic CRUD Interface connected to MongoDB Atlas</p>
+        </div>
+      </div>
+      <div id="dbStatus" class="status-badge checking">
+        <span class="status-dot"></span> Checking DB...
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <div class="main-layout">
+      <!-- Left: Create Form -->
+      <section class="card form-card">
+        <div class="card-header">
+          <h2>➕ Add New Record</h2>
+          <p>Insert a new document into MongoDB</p>
+        </div>
+        <form id="recordForm">
+          <div class="form-group">
+            <label for="name">Full Name *</label>
+            <input type="text" id="name" placeholder="e.g. Alex Johnson" required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" placeholder="e.g. alex@example.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="department">Department / Category</label>
+            <input type="text" id="department" placeholder="e.g. Computer Science" />
+          </div>
+
+          <div class="form-group">
+            <label for="details">Additional Details</label>
+            <textarea id="details" rows="2" placeholder="Notes or remarks..."></textarea>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn primary-btn">
+            💾 Save to MongoDB
+          </button>
+        </form>
+      </section>
+
+      <!-- Right: Records List -->
+      <section class="card list-card">
+        <div class="card-header list-header">
+          <div>
+            <h2>📋 Records (<span id="recordCount">0</span>)</h2>
+            <p>Live documents from collection</p>
+          </div>
+          <button id="refreshBtn" class="btn outline-btn" title="Refresh records">
+            🔄 Refresh
+          </button>
+        </div>
+
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="🔍 Search records..." />
+        </div>
+
+        <div class="table-container">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="recordsTbody">
+              <tr>
+                <td colspan="4" class="empty-state">Loading records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>✏️ Edit Record</h3>
+        <button id="closeModalBtn" class="close-btn">&times;</button>
+      </div>
+      <form id="editForm">
+        <input type="hidden" id="editId" />
+        <div class="form-group">
+          <label for="editName">Full Name *</label>
+          <input type="text" id="editName" required />
+        </div>
+        <div class="form-group">
+          <label for="editEmail">Email Address *</label>
+          <input type="email" id="editEmail" required />
+        </div>
+        <div class="form-group">
+          <label for="editDepartment">Department</label>
+          <input type="text" id="editDepartment" />
+        </div>
+        <div class="form-group">
+          <label for="editDetails">Details</label>
+          <textarea id="editDetails" rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelEditBtn" class="btn secondary-btn">Cancel</button>
+          <button type="submit" class="btn primary-btn">Update Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
