@@ -1,7 +1,7 @@
 // ============================================
 // CONFIGURATION & SECRET URL
 // ============================================
-const SECRET_URL =""
+const SECRET_URL = process.env.SECRET_URL;
 const STORAGE_KEY = "university_records";
 
 // Default Sample Data (used when local storage is empty)
