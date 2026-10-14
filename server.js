@@ -6,7 +6,7 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const url = "";
+const url = process.env.SECRET_URL;
 
 // Middleware
 app.use(cors());
