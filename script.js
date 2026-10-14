@@ -1,9 +1,7 @@
 // ============================================
 // CONFIGURATION & SECRET URL
 // ============================================
-const SECRET_URL =
-  "mongodb+srv://khalidmkhalidcompk_db_user:khalid@cluster0.yihuv71.mongodb.net/university?appName=Cluster0";
-
+const SECRET_URL =""
 const STORAGE_KEY = "university_records";
 
 // Default Sample Data (used when local storage is empty)
