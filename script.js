@@ -1,10 +1,47 @@
-// Elements
-const dbStatus = document.getElementById("dbStatus");
+// ============================================
+// CONFIGURATION & SECRET URL
+// ============================================
+const SECRET_URL =
+  "mongodb+srv://khalidmkhalidcompk_db_user:khalid@cluster0.yihuv71.mongodb.net/university?appName=Cluster0";
+
+const STORAGE_KEY = "university_records";
+
+// Default Sample Data (used when local storage is empty)
+const DEFAULT_RECORDS = [
+  {
+    _id: "doc_101",
+    name: "Muhammad Khalid",
+    email: "khalid@university.edu",
+    department: "Software Engineering",
+    details: "Lead Developer",
+  },
+  {
+    _id: "doc_102",
+    name: "Ayesha Ahmed",
+    email: "ayesha@university.edu",
+    department: "Computer Science",
+    details: "AI & Data Science Track",
+  },
+  {
+    _id: "doc_103",
+    name: "Zain Ali",
+    email: "zain@university.edu",
+    department: "Cyber Security",
+    details: "Semester 5",
+  },
+];
+
+// ============================================
+// DOM ELEMENTS
+// ============================================
 const recordForm = document.getElementById("recordForm");
 const recordsTbody = document.getElementById("recordsTbody");
 const recordCount = document.getElementById("recordCount");
 const searchInput = document.getElementById("searchInput");
-const refreshBtn = document.getElementById("refreshBtn");
+const secretUrlInput = document.getElementById("secretUrlInput");
+const copyUrlBtn = document.getElementById("copyUrlBtn");
+const exportBtn = document.getElementById("exportBtn");
+const resetBtn = document.getElementById("resetBtn");
 
 // Modal Elements
 const editModal = document.getElementById("editModal");
@@ -17,7 +54,7 @@ const editDetails = document.getElementById("editDetails");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
 
-// Toast
+// Toast Notification
 const toast = document.getElementById("toast");
 let toastTimer;
 
@@ -32,68 +69,64 @@ function showToast(message, type = "success") {
   }, 3000);
 }
 
-// Local State
-let records = [];
-
-// 1. Check DB Connection Status
-async function checkStatus() {
+// ============================================
+// STORAGE HELPERS (Local Persistence)
+// ============================================
+function getStoredRecords() {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (!data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_RECORDS));
+    return DEFAULT_RECORDS;
+  }
   try {
-    const res = await fetch("/api/status");
-    const data = await res.json();
-
-    if (data.connected) {
-      dbStatus.className = "status-badge online";
-      dbStatus.innerHTML = '<span class="status-dot"></span> MongoDB Online';
-    } else {
-      dbStatus.className = "status-badge offline";
-      dbStatus.innerHTML = '<span class="status-dot"></span> MongoDB Offline';
-    }
-  } catch (err) {
-    dbStatus.className = "status-badge offline";
-    dbStatus.innerHTML = '<span class="status-dot"></span> Server Offline';
+    return JSON.parse(data);
+  } catch (e) {
+    return DEFAULT_RECORDS;
   }
 }
 
-// 2. Fetch All Records (READ)
-async function fetchRecords() {
-  try {
-    const res = await fetch("/api/records");
-    if (!res.ok) throw new Error("Failed to load records");
-    records = await res.json();
-    renderRecords(records);
-  } catch (err) {
-    recordsTbody.innerHTML = `<tr><td colspan="4" class="empty-state">Error loading records: ${err.message}</td></tr>`;
-  }
+function saveStoredRecords(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// Render Records to Table
-function renderRecords(data) {
-  recordCount.textContent = data.length;
+let records = getStoredRecords();
 
-  if (data.length === 0) {
-    recordsTbody.innerHTML = `<tr><td colspan="4" class="empty-state">No records found in database. Add one on the left!</td></tr>`;
+// ============================================
+// RENDER RECORDS (READ)
+// ============================================
+function renderRecords(dataToRender = records) {
+  recordCount.textContent = dataToRender.length;
+
+  if (dataToRender.length === 0) {
+    recordsTbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="empty-state">No records found. Fill the form on the left to add one!</td>
+      </tr>
+    `;
     return;
   }
 
-  recordsTbody.innerHTML = data
+  recordsTbody.innerHTML = dataToRender
     .map(
       (item) => `
-    <tr>
-      <td><strong>${escapeHtml(item.name)}</strong></td>
-      <td>${escapeHtml(item.email)}</td>
-      <td>${escapeHtml(item.department || "-")}</td>
-      <td>
-        <button class="action-btn action-edit" onclick="openEditModal('${item._id}')">Edit</button>
-        <button class="action-btn action-delete" onclick="deleteRecord('${item._id}')">Delete</button>
-      </td>
-    </tr>
-  `
+      <tr>
+        <td><strong>${escapeHtml(item.name)}</strong></td>
+        <td>${escapeHtml(item.email)}</td>
+        <td>${escapeHtml(item.department || "-")}</td>
+        <td>
+          <button class="action-btn action-edit" onclick="openEditModal('${item._id}')">Edit</button>
+          <button class="action-btn action-delete" onclick="deleteRecord('${item._id}')">Delete</button>
+        </td>
+      </tr>
+    `
     )
     .join("");
 }
 
-// 3. Create Record (CREATE)
-recordForm.addEventListener("submit", async (e) => {
+// ============================================
+// ADD RECORD (CREATE)
+// ============================================
+recordForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
   const name = document.getElementById("name").value.trim();
@@ -101,25 +134,26 @@ recordForm.addEventListener("submit", async (e) => {
   const department = document.getElementById("department").value.trim();
   const details = document.getElementById("details").value.trim();
 
-  try {
-    const res = await fetch("/api/records", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, department, details }),
-    });
+  const newRecord = {
+    _id: "doc_" + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+    name,
+    email,
+    department,
+    details,
+    createdAt: new Date().toISOString(),
+  };
 
-    if (!res.ok) throw new Error("Could not create record");
-
-    recordForm.reset();
-    showToast("Record successfully saved to MongoDB!");
-    fetchRecords();
-  } catch (err) {
-    showToast(err.message, "error");
-  }
+  records.unshift(newRecord);
+  saveStoredRecords(records);
+  renderRecords(records);
+  recordForm.reset();
+  showToast("Record successfully created!");
 });
 
-// 4. Update Record (UPDATE)
-function openEditModal(id) {
+// ============================================
+// EDIT RECORD (UPDATE)
+// ============================================
+window.openEditModal = function (id) {
   const item = records.find((r) => r._id === id);
   if (!item) return;
 
@@ -130,7 +164,7 @@ function openEditModal(id) {
   editDetails.value = item.details || "";
 
   editModal.classList.remove("hidden");
-}
+};
 
 function closeEditModal() {
   editModal.classList.add("hidden");
@@ -140,51 +174,40 @@ function closeEditModal() {
 closeModalBtn.addEventListener("click", closeEditModal);
 cancelEditBtn.addEventListener("click", closeEditModal);
 
-editForm.addEventListener("submit", async (e) => {
+editForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
   const id = editId.value;
-  const name = editName.value.trim();
-  const email = editEmail.value.trim();
-  const department = editDepartment.value.trim();
-  const details = editDetails.value.trim();
+  const index = records.findIndex((r) => r._id === id);
+  if (index === -1) return;
 
-  try {
-    const res = await fetch(`/api/records/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, department, details }),
-    });
+  records[index].name = editName.value.trim();
+  records[index].email = editEmail.value.trim();
+  records[index].department = editDepartment.value.trim();
+  records[index].details = editDetails.value.trim();
+  records[index].updatedAt = new Date().toISOString();
 
-    if (!res.ok) throw new Error("Could not update record");
-
-    closeEditModal();
-    showToast("Record updated successfully!");
-    fetchRecords();
-  } catch (err) {
-    showToast(err.message, "error");
-  }
+  saveStoredRecords(records);
+  renderRecords(records);
+  closeEditModal();
+  showToast("Record updated successfully!");
 });
 
-// 5. Delete Record (DELETE)
-async function deleteRecord(id) {
-  if (!confirm("Are you sure you want to delete this document from MongoDB?")) return;
+// ============================================
+// DELETE RECORD (DELETE)
+// ============================================
+window.deleteRecord = function (id) {
+  if (!confirm("Are you sure you want to delete this record?")) return;
 
-  try {
-    const res = await fetch(`/api/records/${id}`, {
-      method: "DELETE",
-    });
+  records = records.filter((r) => r._id !== id);
+  saveStoredRecords(records);
+  renderRecords(records);
+  showToast("Record deleted!");
+};
 
-    if (!res.ok) throw new Error("Failed to delete record");
-
-    showToast("Record deleted from MongoDB!");
-    fetchRecords();
-  } catch (err) {
-    showToast(err.message, "error");
-  }
-}
-
-// Search Filter
+// ============================================
+// SEARCH & FILTER
+// ============================================
 searchInput.addEventListener("input", (e) => {
   const query = e.target.value.toLowerCase();
   const filtered = records.filter(
@@ -196,11 +219,40 @@ searchInput.addEventListener("input", (e) => {
   renderRecords(filtered);
 });
 
-// Refresh Button
-refreshBtn.addEventListener("click", () => {
-  fetchRecords();
-  checkStatus();
-  showToast("Refreshed!");
+// ============================================
+// COPY SECRET URL
+// ============================================
+copyUrlBtn.addEventListener("click", () => {
+  navigator.clipboard.writeText(SECRET_URL).then(() => {
+    showToast("Secret URL copied to clipboard!");
+  }).catch(() => {
+    secretUrlInput.select();
+    document.execCommand("copy");
+    showToast("Secret URL copied!");
+  });
+});
+
+// ============================================
+// EXPORT & RESET ACTIONS
+// ============================================
+exportBtn.addEventListener("click", () => {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records, null, 2));
+  const downloadAnchor = document.createElement("a");
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", "university_records.json");
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+  showToast("Exported JSON successfully!");
+});
+
+resetBtn.addEventListener("click", () => {
+  if (confirm("Reset to default sample records?")) {
+    records = [...DEFAULT_RECORDS];
+    saveStoredRecords(records);
+    renderRecords(records);
+    showToast("Reset to sample records!");
+  }
 });
 
 // Utility: Prevent XSS
@@ -214,8 +266,7 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-// Initial Load
+// Initial Render
 document.addEventListener("DOMContentLoaded", () => {
-  checkStatus();
-  fetchRecords();
+  renderRecords(records);
 });

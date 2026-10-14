@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MongoDB Database Interface</title>
+  <title>University Database - Frontend Interface</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,22 +16,40 @@
       <div class="header-left">
         <div class="logo">🍃</div>
         <div>
-          <h1>MongoDB Manager</h1>
-          <p class="subtitle">Basic CRUD Interface connected to MongoDB Atlas</p>
+          <h1>University Database Interface</h1>
+          <p class="subtitle">Client-Side Frontend Application (No Local Server or Port Required)</p>
         </div>
       </div>
-      <div id="dbStatus" class="status-badge checking">
-        <span class="status-dot"></span> Checking DB...
+      <div class="status-badge online">
+        <span class="status-dot"></span> Frontend Ready
       </div>
     </header>
 
+    <!-- Secret URL Card -->
+    <div class="card config-card">
+      <div class="config-header">
+        <span class="config-label">🔑 Configured Secret URL:</span>
+        <button id="copyUrlBtn" class="btn outline-btn small-btn" title="Copy to clipboard">
+          📋 Copy URL
+        </button>
+      </div>
+      <div class="url-box">
+        <input 
+          type="text" 
+          id="secretUrlInput" 
+          value="mongodb+srv://khalidmkhalidcompk_db_user:khalid@cluster0.yihuv71.mongodb.net/university?appName=Cluster0" 
+          readonly 
+        />
+      </div>
+    </div>
+
     <!-- Main Content Grid -->
     <div class="main-layout">
-      <!-- Left: Create Form -->
+      <!-- Left: Create Record Form -->
       <section class="card form-card">
         <div class="card-header">
           <h2>➕ Add New Record</h2>
-          <p>Insert a new document into MongoDB</p>
+          <p>Insert a document into the dataset</p>
         </div>
         <form id="recordForm">
           <div class="form-group">
@@ -41,39 +59,44 @@
 
           <div class="form-group">
             <label for="email">Email Address *</label>
-            <input type="email" id="email" placeholder="e.g. alex@example.com" required />
+            <input type="email" id="email" placeholder="e.g. alex@university.edu" required />
           </div>
 
           <div class="form-group">
-            <label for="department">Department / Category</label>
+            <label for="department">Department / Major</label>
             <input type="text" id="department" placeholder="e.g. Computer Science" />
           </div>
 
           <div class="form-group">
-            <label for="details">Additional Details</label>
-            <textarea id="details" rows="2" placeholder="Notes or remarks..."></textarea>
+            <label for="details">Additional Notes / Info</label>
+            <textarea id="details" rows="2" placeholder="e.g. Semester 4, GPA 3.8"></textarea>
           </div>
 
-          <button type="submit" id="submitBtn" class="btn primary-btn">
-            💾 Save to MongoDB
+          <button type="submit" class="btn primary-btn">
+            💾 Save Record
           </button>
         </form>
       </section>
 
-      <!-- Right: Records List -->
+      <!-- Right: Records Table & Operations -->
       <section class="card list-card">
         <div class="card-header list-header">
           <div>
             <h2>📋 Records (<span id="recordCount">0</span>)</h2>
-            <p>Live documents from collection</p>
+            <p>Saved in browser storage</p>
           </div>
-          <button id="refreshBtn" class="btn outline-btn" title="Refresh records">
-            🔄 Refresh
-          </button>
+          <div class="header-actions">
+            <button id="exportBtn" class="btn outline-btn small-btn" title="Export as JSON">
+              📥 Export
+            </button>
+            <button id="resetBtn" class="btn outline-btn small-btn" title="Reset sample data">
+              🔄 Reset Sample
+            </button>
+          </div>
         </div>
 
         <div class="search-box">
-          <input type="text" id="searchInput" placeholder="🔍 Search records..." />
+          <input type="text" id="searchInput" placeholder="🔍 Search by name, email, or department..." />
         </div>
 
         <div class="table-container">
@@ -87,9 +110,7 @@
               </tr>
             </thead>
             <tbody id="recordsTbody">
-              <tr>
-                <td colspan="4" class="empty-state">Loading records...</td>
-              </tr>
+              <!-- Rendered dynamically -->
             </tbody>
           </table>
         </div>
